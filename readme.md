@@ -1,1 +1,7 @@
-API_KEY = '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'//personal account
+# Installation
+
+- Create a `.env` file with `OPENAI_API_KEY`
+
+```sh
+OPENAI_API_KEY=xx-xxxxxxx
+```

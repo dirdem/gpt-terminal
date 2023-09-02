@@ -1,31 +1,33 @@
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import * as readlineSync from "readline-sync";
 import * as childProcess from "child_process";
-import * as dotenv from 'dotenv';
+import * as dotenv from "dotenv";
 dotenv.config();
-
 process.stdin.setEncoding("utf8");
 
-const chatGptApiKey = process.env.CHAT_GPT_API_KEY || ''
-const gptConfig = new Configuration({
-  apiKey: chatGptApiKey,
-});
+const openAi = new OpenAI();
 
-const openai = new OpenAIApi(gptConfig);
-
-const gptPrompt = (input: string) =>
-  `Convert this text to a bash command, the most popular command:
-  Example: Can you give me the files in this directory?
-  ls
-  ${input}`;
+const messages: any = [
+  { role: "system", content: "Convert human text to a bash command, the most popular command. When you " },
+  { role: "user", content: "Show files in this directory" },
+  { role: "assistant", content: "ls" },
+];
 
 async function execGpt(input: string): Promise<string> {
-  const completion = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: gptPrompt(input),
-    max_tokens: 100,
+  messages.push({
+    role: "user",
+    content: input,
   });
-  return completion.data.choices[0].text || "";
+  const completion = await openAi.chat.completions.create({
+    messages: messages,
+    model: "gpt-3.5-turbo",
+  });
+  const response: any = completion.choices[0].message.content;
+  messages.push({
+    role: "assistant",
+    content: response,
+  });
+  return response;
 }
 
 async function main() {
