@@ -9,14 +9,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const { Configuration, OpenAIApi } = require("openai");
+const openai_1 = require("openai");
 const readlineSync = require("readline-sync");
 const childProcess = require("child_process");
+const dotenv = require("dotenv");
+dotenv.config();
 process.stdin.setEncoding("utf8");
-const gptConfig = new Configuration({
-    apiKey: "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",
+const chatGptApiKey = process.env.CHAT_GPT_API_KEY || '';
+const gptConfig = new openai_1.Configuration({
+    apiKey: chatGptApiKey,
 });
-const openai = new OpenAIApi(gptConfig);
+const openai = new openai_1.OpenAIApi(gptConfig);
 const gptPrompt = (input) => `Convert this text to a bash command, the most popular command:
   Example: Can you give me the files in this directory?
   ls
@@ -28,20 +31,19 @@ function execGpt(input) {
             prompt: gptPrompt(input),
             max_tokens: 100,
         });
-        return completion.data.choices[0].text;
+        return completion.data.choices[0].text || "";
     });
 }
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         console.log("Ciao, cosa vuoi fare oggi?");
-        //read user input
-        const input = readlineSync.prompt();
-        //exec gpt
-        let cmd = yield execGpt(input);
-        //format string
-        cmd = cmd.replace(/^\s+|\s+$/g, "");
-        console.log("cmd by gtp", cmd);
         try {
+            //read user input
+            const input = readlineSync.prompt();
+            //exec gpt
+            let cmd = yield execGpt(input);
+            //format string
+            cmd = cmd.replace(/^\s+|\s+$/g, "");
             //user confirm
             const risposta = readlineSync.question(`Sicuro di voler eseguire il comando "${cmd}"? [y/N] `);
             if (risposta.toLowerCase() === "y") {

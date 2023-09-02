@@ -1,12 +1,16 @@
 import { Configuration, OpenAIApi } from "openai";
 import * as readlineSync from "readline-sync";
 import * as childProcess from "child_process";
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 process.stdin.setEncoding("utf8");
 
+const chatGptApiKey = process.env.CHAT_GPT_API_KEY || ''
 const gptConfig = new Configuration({
-  apiKey: "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",
+  apiKey: chatGptApiKey,
 });
+
 const openai = new OpenAIApi(gptConfig);
 
 const gptPrompt = (input: string) =>
