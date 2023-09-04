@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import * as readlineSync from "readline-sync";
 import * as childProcess from "child_process";
+import * as os from "os";
 import * as dotenv from "dotenv";
 dotenv.config();
 process.stdin.setEncoding("utf8");
@@ -8,53 +9,47 @@ process.stdin.setEncoding("utf8");
 const openAi = new OpenAI();
 
 const messages: any = [
-  { role: "system", content: "Convert human text to a bash command, the most popular command. When you " },
-  { role: "user", content: "Show files in this directory" },
-  { role: "assistant", content: "ls" },
+  {
+    role: "system",
+    content: `Sei un assistente per terminale per il sistema operativo ${os.platform()}. Devi fornire all'utente comandi e istruzioni in modo sintetico, semplice e conciso`,
+  },
 ];
 
-async function execGpt(input: string): Promise<string> {
+async function execGpt(input: string): Promise<void> {
   messages.push({
     role: "user",
     content: input,
   });
-  const completion = await openAi.chat.completions.create({
+  const stream = await openAi.chat.completions.create({
     messages: messages,
     model: "gpt-3.5-turbo",
+    stream: true,
   });
-  const response: any = completion.choices[0].message.content;
+  let output = "";
+  for await (const part of stream) {
+    const content = part.choices[0]?.delta?.content;
+    output += content;
+    process.stdout.write(content || "");
+  }
   messages.push({
     role: "assistant",
-    content: response,
+    content: output,
   });
-  return response;
+  process.stdout.write('\n');
 }
 
 async function main() {
-  console.log("Ciao, cosa vuoi fare oggi?");
+  await execGpt('');
 
-  try {
-    //read user input
-    const input = readlineSync.prompt();
-
-    //exec gpt
-    let cmd: string = await execGpt(input);
-
-    //format string
-    cmd = cmd.replace(/^\s+|\s+$/g, "");
-
-    //user confirm
-    const risposta = readlineSync.question(`Sicuro di voler eseguire il comando "${cmd}"? [y/N] `);
-    if (risposta.toLowerCase() === "y") {
-      console.log(`>${cmd}`);
-
-      //exec command
-      childProcess.execSync(cmd, { stdio: "inherit" });
-    } else {
-      console.log("Comando annullato.");
+  while (true) {
+    try {
+      //read user input
+      const input = readlineSync.prompt();
+      //exec gpt
+      await execGpt(input);
+    } catch (error) {
+      console.error("error", error);
     }
-  } catch (error) {
-    console.error("error", error);
   }
 }
 
